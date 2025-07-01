@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hour That Changes the World - Prayer Timer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f5f6fa;
+      color: #222;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    h1 {
+      margin-top: 30px;
+      font-size: 2em;
+      text-align: center;
+    }
+    #timer-container {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 32px 24px;
+      margin: 32px 0 0 0;
+      width: 95%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #time-remaining {
+      font-size: 2.2em;
+      margin: 12px 0 0 0;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 2px;
+    }
+    #current-segment {
+      margin: 24px 0 0 0;
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #1976d2;
+      text-align: center;
+    }
+    #bible-passage {
+      margin: 18px 0 0 0;
+      font-size: 1.05em;
+      background: #f1f8e9;
+      border-radius: 8px;
+      padding: 16px;
+      color: #2e7d32;
+      max-width: 100%;
+      box-sizing: border-box;
+      white-space: pre-line;
+    }
+    #progress-bar {
+      width: 100%;
+      height: 18px;
+      background: #e0e0e0;
+      border-radius: 9px;
+      margin: 24px 0 16px 0;
+      overflow: hidden;
+    }
+    #progress {
+      height: 100%;
+      background: #4a90e2;
+      width: 0%;
+      transition: width 0.5s;
+    }
+    #controls {
+      margin: 24px 0 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+    }
+    button {
+      padding: 10px 22px;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      background: #1976d2;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:disabled {
+      background: #b0bec5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>The Hour That Changes the World<br><span style="font-size:0.7em;font-weight:normal;">Prayer Timer</span></h1>
+  <div id="timer-container">
+    <div id="time-remaining">60:00</div>
+    <div id="progress-bar"><div id="progress"></div></div>
+    <div id="current-segment"></div>
+    <div id="bible-passage"></div>
+    <div id="controls">
+      <button id="start-btn">Start</button>
+      <button id="pause-btn" disabled>Pause</button>
+      <button id="reset-btn" disabled>Reset</button>
+      <button id="next-btn" disabled>Next Segment</button>
+    </div>
+  </div>
+  <script>
+    const segments = [
+      {
+        name: "Praise",
+        passage: `Psalm 100:1-5 (NIV)\n\nShout for joy to the Lord, all the earth. Worship the Lord with gladness; come before him with joyful songs. Know that the Lord is God. It is he who made us, and we are his; we are his people, the sheep of his pasture. Enter his gates with thanksgiving and his courts with praise; give thanks to him and praise his name. For the Lord is good and his love endures forever; his faithfulness continues through all generations.`
+      },
+      {
+        name: "Waiting on the Lord",
+        passage: `Isaiah 40:31 (NIV)\n\nBut those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.`
+      },
+      {
+        name: "Confession",
+        passage: `1 John 1:9 (NIV)\n\nIf we confess our sins, he is faithful and just and will forgive us our sins and purify us from all unrighteousness.`
+      },
+      {
+        name: "Scripture Praying",
+        passage: `Hebrews 4:12 (NIV)\n\nFor the word of God is alive and active. Sharper than any double-edged sword, it penetrates even to dividing soul and spirit, joints and marrow; it judges the thoughts and attitudes of the heart.`
+      },
+      {
+        name: "Watching",
+        passage: `Colossians 4:2 (NIV)\n\nDevote yourselves to prayer, being watchful and thankful.`
+      },
+      {
+        name: "Intercession",
+        passage: `1 Timothy 2:1 (NIV)\n\nI urge, then, first of all, that petitions, prayers, intercession and thanksgiving be made for all people.`
+      },
+      {
+        name: "Petition",
+        passage: `Philippians 4:6 (NIV)\n\nDo not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.`
+      },
+      {
+        name: "Thanksgiving",
+        passage: `1 Thessalonians 5:16-18 (NIV)\n\nRejoice always, pray continually, give thanks in all circumstances; for this is God’s will for you in Christ Jesus.`
+      },
+      {
+        name: "Singing",
+        passage: `Psalm 95:1-2 (NIV)\n\nCome, let us sing for joy to the Lord; let us shout aloud to the Rock of our salvation. Let us come before him with thanksgiving and extol him with music and song.`
+      },
+      {
+        name: "Meditation",
+        passage: `Psalm 1:2-3 (NIV)\n\nBut whose delight is in the law of the Lord, and who meditates on his law day and night. That person is like a tree planted by streams of water, which yields its fruit in season and whose leaf does not wither—whatever they do prospers.`
+      },
+      {
+        name: "Listening",
+        passage: `John 10:27 (NIV)\n\nMy sheep listen to my voice; I know them, and they follow me.`
+      },
+      {
+        name: "Praise (Reprise)",
+        passage: `Psalm 150:1-6 (NIV)\n\nPraise the Lord. Praise God in his sanctuary; praise him in his mighty heavens. Praise him for his acts of power; praise him for his surpassing greatness. Praise him with the sounding of the trumpet, praise him with the harp and lyre, praise him with timbrel and dancing, praise him with the strings and pipe, praise him with the clash of cymbals, praise him with resounding cymbals. Let everything that has breath praise the Lord. Praise the Lord.`
+      }
+    ];
+
+    const segmentDuration = 5 * 60;
+    const totalSegments = segments.length;
+    const totalDuration = segmentDuration * totalSegments;
+
+    const timeRemainingEl = document.getElementById('time-remaining');
+    const progressEl = document.getElementById('progress');
+    const currentSegmentEl = document.getElementById('current-segment');
+    const biblePassageEl = document.getElementById('bible-passage');
+    const startBtn = document.getElementById('start-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    let currentTime = totalDuration;
+    let timer = null;
+    let running = false;
+    let currentSegment = 0;
+    let audioCtx = null;
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function playChime() {
+      try {
+        if (!audioCtx) return;
+        const duration = 5;
+        for (let i = 0; i < duration; i++) {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = 880 + (i % 2 ? 220 : 0);
+          gain.gain.value = 0.15;
+          osc.connect(gain).connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + i);
+          osc.stop(audioCtx.currentTime + i + 0.4);
+        }
+      } catch (e) {
+        alert("Segment complete!");
+      }
+    }
+
+    function updateUI() {
+      timeRemainingEl.textContent = formatTime(currentTime);
+      const percent = 100 * (1 - currentTime / totalDuration);
+      progressEl.style.width = percent + '%';
+      currentSegmentEl.textContent = `${currentSegment + 1}. ${segments[currentSegment].name}`;
+      biblePassageEl.textContent = segments[currentSegment].passage;
+    }
+
+    function tick() {
+      if (!running) return;
+      if (currentTime <= 0) {
+        running = false;
+        clearInterval(timer);
+        timer = null;
+        updateUI();
+        playChime();
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        resetBtn.disabled = false;
+        nextBtn.disabled = true;
+        return;
+      }
+
+      currentTime--;
+      const newSegment = Math.floor((totalDuration - currentTime) / segmentDuration);
+      if (newSegment !== currentSegment && newSegment < totalSegments) {
+        currentSegment = newSegment;
+        updateUI();
+        playChime();
+      }
+      updateUI();
+    }
+
+    startBtn.onclick = async function () {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        await audioCtx.resume();
+      }
+
+      if (!running) {
+        running = true;
+        timer = setInterval(tick, 1000);
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        resetBtn.disabled = false;
+        nextBtn.disabled = false;
+      }
+    };
+
+    pauseBtn.onclick = function () {
+      if (running) {
+        running = false;
+        clearInterval(timer);
+        timer = null;
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+      }
+    };
+
+    resetBtn.onclick = function () {
+      running = false;
+      clearInterval(timer);
+      timer = null;
+      currentTime = totalDuration;
+      currentSegment = 0;
+      updateUI();
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      resetBtn.disabled = true;
+      nextBtn.disabled = true;
+    };
+
+    nextBtn.onclick = function () {
+      if (currentSegment < totalSegments - 1) {
+        currentSegment++;
+        currentTime = totalDuration - (currentSegment * segmentDuration);
+        updateUI();
+        playChime();
+      }
+    };
+
+    updateUI();
+  </script>
+</body>
+</html>
